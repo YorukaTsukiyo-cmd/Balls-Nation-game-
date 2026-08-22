@@ -433,6 +433,8 @@
     }
   }
 
+  let recoilVel = 0;
+
   function removeGroup(left, right, comboLevel) {
     const removedCount = right-left+1;
     for (let i=left;i<=right;i++) { const p = pointAtS(displayS(i)); spawnParticles(p.x, p.y, chain[i].color, 6); }
@@ -442,6 +444,8 @@
     ballsCleared += removedCount;
     updateHud();
     chain.splice(left, removedCount);
+    // Butun zanjirni (old qismini ham) qisqa muddat orqaga tortish - klassik "recoil" effekti
+    recoilVel += removedCount * ballD * 5.5;
     if (comboLevel>1) { haptic('heavy'); sfx.combo(comboLevel); } else { haptic('medium'); sfx.pop(removedCount); }
   }
 
@@ -669,7 +673,14 @@
       return;
     }
     const chainSpeed = (Math.min(W,H)*0.0825) * (1 + (level-1)*0.16);
-    headS -= chainSpeed*dt;
+    if (recoilVel > 0.5) {
+      headS += recoilVel*dt;
+      recoilVel *= Math.max(0, 1 - dt*6.5);
+      headS = Math.min(headS, path.total);
+    } else {
+      recoilVel = 0;
+      headS -= chainSpeed*dt;
+    }
     for (const b of chain) {
       if (b.offset) {
         const decay = ballD*7*dt;
@@ -730,7 +741,7 @@
 
   function resetGame() {
     level = startLevel; score = 0; ballsCleared = 0; gameOver = false;
-    particles = []; shotBall = null; levelTransition = false;
+    particles = []; shotBall = null; levelTransition = false; recoilVel = 0;
     currentColor = randColor(); nextColor = randColor();
     buildChain(level);
     drawPreviews(); updateHud(); draw();
